@@ -1,0 +1,18 @@
+app:
+  name: my_de_project
+  log_level: INFO
+pipeline:
+  batch_size: 1000
+source:
+  url: data/raw/orders.json
+  timeout_seconds: 30
+  retries: 3
+  backoff_seconds: 1.0
+  verify_ssl: true
+warehouse:
+  db_url: sqlite:///data/processed/warehouse.db
+  table_name: orders
+  if_exists: replace
+  artifact_path: data/processed/orders.parquet
+observability:
+  lineage_path: data/processed/lineage.jsonl

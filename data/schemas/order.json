@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Order",
+  "type": "object",
+  "properties": {
+    "order_id": { "type": "integer" },
+    "customer_id": { "type": "integer" },
+    "amount": { "type": "number" },
+    "status": { "type": "string" }
+  },
+  "required": ["order_id", "customer_id", "amount", "status"],
+  "additionalProperties": false
+}

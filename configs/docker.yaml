@@ -1,0 +1,15 @@
+app:
+  log_level: INFO
+source:
+  url: http://mock-api:8000/orders.json
+  timeout_seconds: 30
+  retries: 5
+  backoff_seconds: 1.0
+  verify_ssl: false
+warehouse:
+  db_url: postgresql+psycopg2://analytics:analytics@postgres:5432/analytics
+  table_name: analytics.orders
+  if_exists: replace
+  artifact_path: data/processed/orders.parquet
+observability:
+  lineage_path: data/processed/lineage.jsonl

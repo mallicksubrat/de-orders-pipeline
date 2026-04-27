@@ -1,0 +1,14 @@
+.git
+.github
+.pytest_cache
+.ruff_cache
+.venv
+__pycache__
+tests
+notebooks
+docs
+infra
+migrations
+monitoring
+secrets
+data/processed

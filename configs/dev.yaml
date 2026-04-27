@@ -1,0 +1,4 @@
+app:
+  log_level: DEBUG
+pipeline:
+  batch_size: 100

@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-analytics}
+      POSTGRES_USER: ${POSTGRES_USER:-analytics}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-analytics}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql/init_warehouse.sql:/docker-entrypoint-initdb.d/001_init_warehouse.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-analytics} -d ${POSTGRES_DB:-analytics}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  mock-api:
+    image: python:3.11-slim
+    working_dir: /srv/mock_api
+    command: ["python", "-m", "http.server", "8000", "--bind", "0.0.0.0"]
+    ports:
+      - "${MOCK_API_PORT:-8000}:8000"
+    volumes:
+      - ./mock_api:/srv/mock_api:ro
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/orders.json').read()\""]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  pipeline:
+    build: .
+    environment:
+      APP_ENV: docker
+      SOURCE_URL: ${SOURCE_URL:-http://mock-api:8000/orders.json}
+      WAREHOUSE_DB_URL: ${WAREHOUSE_DB_URL:-postgresql+psycopg2://analytics:analytics@postgres:5432/analytics}
+      WAREHOUSE_TABLE_NAME: ${WAREHOUSE_TABLE_NAME:-analytics.orders}
+      WAREHOUSE_IF_EXISTS: ${WAREHOUSE_IF_EXISTS:-replace}
+      WAREHOUSE_ARTIFACT_PATH: ${WAREHOUSE_ARTIFACT_PATH:-data/processed/orders.parquet}
+      LINEAGE_PATH: ${LINEAGE_PATH:-data/processed/lineage.jsonl}
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mock-api:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

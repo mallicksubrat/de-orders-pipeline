@@ -1,0 +1,16 @@
+pandas
+pyyaml
+requests
+sqlalchemy
+pydantic
+click
+boto3
+kafka-python
+prometheus_client
+PyMySQL
+psycopg2-binary
+pyarrow
+
+[dev]
+pytest
+ruff

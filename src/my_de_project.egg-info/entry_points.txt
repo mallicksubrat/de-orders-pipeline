@@ -1,0 +1,2 @@
+[console_scripts]
+my-project = my_project.cli:cli
