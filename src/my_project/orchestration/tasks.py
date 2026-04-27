@@ -19,7 +19,7 @@ from my_project.utils.logger import get_logger
 
 def run_orders_pipeline(config: AppConfig) -> PipelineResult:
     logger = get_logger("my_project.pipeline", level=config.app.log_level)
-    logger.info("Starting pipeline app=%s env=%s", config.app.name, config.app.env)
+    logger.info("Starting pipeline app=%s env=%s version=0.2.0", config.app.name, config.app.env)
 
     try:
         raw_rows = fetch_orders(config.source)
