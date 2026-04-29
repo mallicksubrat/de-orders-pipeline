@@ -89,7 +89,7 @@ docker compose run --rm pipeline
 ## 💡 What I Learned
 - Designing production-grade pipelines
 - Handling real-world data quality issues
-- Building observable and scalable systems# my_de_project
+- Building observable and scalable systems
 
 Small production-style batch pipeline that ingests order data, validates it, stores it in a warehouse table, writes a parquet snapshot, and emits lineage events.
 
