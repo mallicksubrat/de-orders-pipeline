@@ -8,6 +8,7 @@ lint:
 
 security:
 	python scripts/scan_secrets.py
+	python scripts/check_repo_hygiene.py
 
 check: lint security test
 

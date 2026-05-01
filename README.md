@@ -33,7 +33,7 @@ See [docs/architecture.md](docs/architecture.md) for component responsibilities 
 
 ```text
 configs/                 Environment-specific YAML config
-dags/                    Airflow DAG adapter
+dags/                    Optional scheduler DAG wrapper
 data/                    Runtime input/output directories
 mock_api/                Local HTTP source fixture
 scripts/                 Repository maintenance checks
