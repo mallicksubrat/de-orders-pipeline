@@ -15,9 +15,19 @@ A batch data pipeline for ingesting, validating, transforming, loading, and obse
 
 ## Architecture
 
-```text
-source -> extractor -> transformer -> quality checks -> warehouse load -> lineage -> metrics
+```mermaid
+flowchart LR
+    A[Source API/JSON] --> B[Extractor]
+    B --> C[Transformer]
+    C --> D[Validation]
+    D --> E[Loader]
+    E --> F[(Postgres)]
+    C --> G[Parquet Output]
+    E --> H[Lineage Logs]
+    E --> I[Prometheus Metrics]
 ```
+
+See [docs/architecture.md](docs/architecture.md) for component responsibilities and runtime flow.
 
 ## Project Structure
 
