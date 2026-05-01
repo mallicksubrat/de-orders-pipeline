@@ -19,4 +19,6 @@ def fetch_orders(source: SourceSettings) -> list[dict]:
         return payload
     if isinstance(payload, dict) and isinstance(payload.get("orders"), list):
         return payload["orders"]
-    raise DataSourceError("Expected source payload to be a list or an object containing an 'orders' list.")
+    raise DataSourceError(
+        "Expected source payload to be a list or an object containing an 'orders' list."
+    )

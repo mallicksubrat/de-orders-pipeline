@@ -1,92 +1,100 @@
-# 🛒 Production-Grade Orders Data Pipeline
+# Production-Grade Orders Data Pipeline
 
-A scalable batch data pipeline designed to ingest, validate, transform, and monitor order data for analytics use cases.
+A batch data pipeline for ingesting, validating, transforming, loading, and observing order data for analytics workloads.
 
----
+## Production Readiness
 
-## 📌 Problem
-Raw order data is often inconsistent, incomplete, and unreliable, making it difficult to generate accurate business insights.
+- Config-driven execution with environment overrides.
+- Source ingestion from local JSON files or HTTP JSON APIs.
+- Typed configuration and order payload validation with Pydantic.
+- Quality checks before warehouse loading.
+- Idempotent local runs with SQLite and Docker Compose PostgreSQL support.
+- Parquet snapshots, JSONL lineage events, and Prometheus counters.
+- CI checks for linting, unit/integration tests, Docker image build, and secret scanning.
+- No committed runtime secrets. Local credentials are supplied through `.env`, which is git-ignored.
 
----
+## Architecture
 
-## ⚙️ Solution
-This project implements a production-style ETL pipeline with:
+```text
+source -> extractor -> transformer -> quality checks -> warehouse load -> lineage -> metrics
+```
 
-- Data ingestion from API / JSON sources  
-- Data validation and quality checks  
-- Transformation into canonical format  
-- Storage in a warehouse (SQLite/Postgres)  
-- Lineage tracking and observability  
+## Project Structure
 
----
+```text
+configs/                 Environment-specific YAML config
+dags/                    Airflow DAG adapter
+data/                    Runtime input/output directories
+mock_api/                Local HTTP source fixture
+scripts/                 Repository maintenance checks
+sql/                     Warehouse initialization SQL
+src/my_project/          Pipeline package
+tests/                   Unit and integration tests
+.github/workflows/       CI, security, and local Compose deployment workflows
+```
 
-## 🏗 Architecture
-source → extractor → transformer → quality checks → warehouse load → lineage → metrics  
+## Local Python Run
 
----
-
-## 🛠 Tech Stack
-Python • Pandas • SQLAlchemy • PostgreSQL • Docker • Airflow (design-ready) • Prometheus  
-
----
-
-## 🔥 Key Features
-- Idempotent pipeline execution  
-- Modular architecture (extract, transform, load separation)  
-- Data quality validation rules  
-- Lineage tracking via JSONL logs  
-- Metrics and observability integration  
-- Config-driven pipeline (YAML + env overrides)  
-
----
-
-## 📦 Project Structure
-- `extractors/` → data ingestion  
-- `transformers/` → data normalization  
-- `quality/` → validation rules  
-- `loaders/` → warehouse + parquet output  
-- `orchestration/` → pipeline runner  
-- `dags/` → Airflow integration  
-
----
-
-## 🚀 Running the Pipeline
-
-### Local
 ```bash
+python -m pip install --upgrade pip
+pip install -e ".[dev]"
 PYTHONPATH=src python -m my_project.cli run --env dev
 ```
 
-### Docker
+## Local Docker Compose Deployment
+
+Create a local environment file from the example and set a local-only password:
+
 ```bash
-docker compose up -d postgres mock-api
+cp .env.example .env
+```
+
+Edit `.env` and replace `POSTGRES_PASSWORD=replace-with-local-password`.
+
+Run the full local stack:
+
+```bash
+docker compose up --build -d postgres mock-api
 docker compose run --rm pipeline
 ```
 
----
+Stop the stack:
 
-## 📊 Outputs
-- Warehouse table (SQLite/Postgres)  
-- Parquet snapshot  
-- Lineage logs (JSONL)  
-- Pipeline execution metrics  
+```bash
+docker compose down --remove-orphans
+```
 
----
+## Validation
 
-## ⚙️ Configuration
-- YAML-based configs (`configs/`)  
-- Environment variable overrides supported  
+```bash
+make check
+docker compose build pipeline
+```
 
----
+The secret scan checks repository text files for common credential patterns, private keys, credential-bearing URLs, and high-entropy token candidates.
 
-## 🚀 Future Improvements
-- Full Airflow orchestration  
-- Real-time ingestion (Kafka)  
-- Data warehouse optimization  
+## Configuration
 
----
+- Base configuration lives in `configs/base.yaml`.
+- Environment overlays live in `configs/dev.yaml`, `configs/docker.yaml`, and `configs/prod.yaml`.
+- Runtime overrides use environment variables such as `SOURCE_URL`, `WAREHOUSE_DB_URL`, `WAREHOUSE_TABLE_NAME`, and `LINEAGE_PATH`.
+- `SOURCE_AUTH_TOKEN` is supported but redacted from `show-config`.
+- Database passwords in SQLAlchemy URLs are redacted from `show-config`.
+- Sensitive query parameters in source URLs are redacted from config output, exceptions, and lineage events.
 
-## 💡 What I Learned
-- Designing production-grade pipelines  
-- Handling real-world data quality issues  
-- Building observable and scalable systems 
+## CI/CD
+
+GitHub Actions workflows:
+
+- `CI`: lint, tests, and Docker image build.
+- `Security`: repository secret scan.
+- `CD`: self-hosted local Docker Compose deployment on `main` or manual dispatch.
+
+The CD workflow expects a GitHub Actions environment secret named `POSTGRES_PASSWORD`. Optional environment variables include `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PORT`, `MOCK_API_PORT`, and `WAREHOUSE_TABLE_NAME`.
+
+## Outputs
+
+- Warehouse table in SQLite or PostgreSQL.
+- Parquet snapshot at `data/processed/orders.parquet`.
+- Lineage log at `data/processed/lineage.jsonl`.
+- Prometheus counters exposed in process for pipeline runs, extracted rows, and loaded rows.

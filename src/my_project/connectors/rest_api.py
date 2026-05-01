@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from urllib.parse import urlparse
 
 import requests
-from requests.adapters import HTTPAdapter
 from requests import Response
-from urllib.parse import urlparse
+from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+from my_project.config import sanitize_url
 from my_project.exceptions import DataSourceError
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -79,5 +80,5 @@ def get_json(
     try:
         response = client.get(url, timeout=timeout, headers=headers, verify=verify_ssl)
     except requests.RequestException as exc:
-        raise DataSourceError(f"Source request failed for {url}: {exc}") from exc
+        raise DataSourceError(f"Source request failed for {sanitize_url(url)}: {exc}") from exc
     return _validate_http_response(response)

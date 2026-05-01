@@ -1,5 +1,12 @@
 name: CI
-on: [push, pull_request]
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -8,6 +15,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - run: python -m pip install --upgrade pip
       - run: pip install -e .[dev]
-      - run: ruff check src tests
+      - run: ruff check src tests scripts
       - run: pytest -q
+
+  docker-build:
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_PASSWORD: replace-with-ci-password
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose build pipeline

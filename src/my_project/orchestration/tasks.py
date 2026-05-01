@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from my_project.config import AppConfig
+from my_project.config import AppConfig, sanitize_url
 from my_project.extractors.orders_api import fetch_orders
 from my_project.lineage.emitter import emit_lineage
 from my_project.loaders.warehouse import load_df, write_parquet_snapshot
@@ -47,9 +47,9 @@ def run_orders_pipeline(config: AppConfig) -> PipelineResult:
         lineage_path = config.resolve_path(config.observability.lineage_path)
         event = {
             "event_type": "orders_pipeline_completed",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "environment": config.app.env,
-            "source_url": config.source.url,
+            "source_url": sanitize_url(config.source.url),
             "warehouse_table": config.warehouse.table_name,
             "extracted_rows": len(bounded_rows),
             "transformed_rows": int(len(transformed)),

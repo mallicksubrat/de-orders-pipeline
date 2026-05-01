@@ -7,6 +7,6 @@ source:
   retries: 5
   backoff_seconds: 2.0
 warehouse:
-  db_url: postgresql+psycopg2://analytics:analytics@warehouse:5432/analytics
+  db_url: sqlite:///data/processed/warehouse.db
   table_name: analytics.orders
   if_exists: append

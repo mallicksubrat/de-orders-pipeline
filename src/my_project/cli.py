@@ -1,7 +1,7 @@
 import click
 
-from my_project.exceptions import ProjectError
 from my_project.config import load_config
+from my_project.exceptions import ProjectError
 from my_project.orchestration.tasks import run_orders_pipeline
 
 
@@ -32,7 +32,7 @@ def run(env: str | None):
 def show_config(env: str | None):
     """Print the resolved application configuration."""
     cfg = load_config(env=env)
-    click.echo(cfg.model_dump_json(indent=2))
+    click.echo(cfg.model_validate(cfg.redacted_dump()).model_dump_json(indent=2))
 
 
 if __name__ == "__main__":

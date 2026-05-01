@@ -14,7 +14,9 @@ def validate_orders(df: pd.DataFrame) -> None:
 
     duplicate_ids = df.loc[df["order_id"].duplicated(), "order_id"].tolist()
     if duplicate_ids:
-        raise DataQualityError(f"Duplicate order_id values found after transformation: {duplicate_ids}")
+        raise DataQualityError(
+            f"Duplicate order_id values found after transformation: {duplicate_ids}"
+        )
 
     if (df["amount"] < 0).any():
         raise DataQualityError("Order amounts must be non-negative.")

@@ -4,7 +4,12 @@ test:
 	pytest -q
 
 lint:
-	ruff check src tests
+	ruff check src tests scripts
+
+security:
+	python scripts/scan_secrets.py
+
+check: lint security test
 
 run:
 	python -m my_project.cli run

@@ -3,9 +3,11 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from sqlalchemy.engine import make_url
 
 from my_project.exceptions import ConfigError
 
@@ -47,6 +49,22 @@ class WarehouseSettings(BaseModel):
     if_exists: str = "replace"
     artifact_path: Path = Path("data/processed/orders.parquet")
 
+    @field_validator("if_exists")
+    @classmethod
+    def _validate_if_exists(cls, value: str) -> str:
+        allowed = {"fail", "replace", "append"}
+        if value not in allowed:
+            raise ValueError(f"if_exists must be one of {sorted(allowed)}")
+        return value
+
+    @field_validator("table_name")
+    @classmethod
+    def _validate_table_name(cls, value: str) -> str:
+        parts = value.split(".")
+        if not 1 <= len(parts) <= 2 or any(not part.isidentifier() for part in parts):
+            raise ValueError("table_name must be a table or schema.table identifier")
+        return value
+
 
 class ObservabilitySettings(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -73,6 +91,50 @@ class AppConfig(BaseModel):
             raw_path = Path(candidate.removeprefix(prefix))
             return f"{prefix}{self.resolve_path(raw_path)}"
         return candidate
+
+    def redacted_dump(self) -> dict[str, Any]:
+        payload = self.model_dump(mode="json")
+        payload["source"]["auth_token"] = _redact_secret(payload["source"].get("auth_token"))
+        payload["source"]["url"] = sanitize_url(payload["source"]["url"])
+        payload["warehouse"]["db_url"] = redact_database_url(payload["warehouse"]["db_url"])
+        return payload
+
+
+SENSITIVE_QUERY_KEYS = {
+    "access_token",
+    "api_key",
+    "auth",
+    "client_secret",
+    "key",
+    "password",
+    "secret",
+    "sig",
+    "signature",
+    "token",
+}
+
+
+def _redact_secret(value: str | None) -> str | None:
+    return None if value is None else "[REDACTED]"
+
+
+def sanitize_url(value: str) -> str:
+    parsed = urlsplit(value)
+    if not parsed.query:
+        return value
+
+    sanitized_pairs = [
+        (key, "[REDACTED]" if key.lower() in SENSITIVE_QUERY_KEYS else item_value)
+        for key, item_value in parse_qsl(parsed.query, keep_blank_values=True)
+    ]
+    return urlunsplit(parsed._replace(query=urlencode(sanitized_pairs)))
+
+
+def redact_database_url(value: str) -> str:
+    try:
+        return make_url(value).render_as_string(hide_password=True)
+    except Exception:
+        return "[INVALID DATABASE URL]"
 
 
 def _merge_dicts(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:

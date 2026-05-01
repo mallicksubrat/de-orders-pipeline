@@ -3,15 +3,35 @@ name: CD
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   deploy:
     runs-on: self-hosted
+    environment: production
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build and restart pipeline
+      - name: Validate required secrets
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        run: test -n "$POSTGRES_PASSWORD"
+
+      - name: Deploy local compose stack
+        env:
+          POSTGRES_DB: ${{ vars.POSTGRES_DB || 'analytics' }}
+          POSTGRES_USER: ${{ vars.POSTGRES_USER || 'analytics' }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          MOCK_API_PORT: ${{ vars.MOCK_API_PORT || '8000' }}
+          POSTGRES_PORT: ${{ vars.POSTGRES_PORT || '5432' }}
+          WAREHOUSE_TABLE_NAME: ${{ vars.WAREHOUSE_TABLE_NAME || 'analytics.orders' }}
+          WAREHOUSE_IF_EXISTS: append
         run: |
-          docker compose pull
           docker compose up --build -d postgres mock-api
           docker compose run --rm pipeline
